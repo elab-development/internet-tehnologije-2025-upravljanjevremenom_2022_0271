@@ -1,12 +1,14 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom'; 
 import { Card } from '../components/Card';
 import { Button } from '../components/Button';
 
 const Dashboard = () => {
   const [tasks, setTasks] = useState([]);
+  const navigate = useNavigate(); 
 
   useEffect(() => {
-    // Simulacija poziva API-ja (Zahtev: React Hooks)
+    // Simulacija poziva API-ja
     const mockData = [
       { id: 1, title: "Spremanje ITEH projekta", duration: 120, category: "Faks", color: "blue" },
       { id: 2, title: "Trening", duration: 60, category: "Zdravlje", color: "emerald" },
@@ -18,13 +20,24 @@ const Dashboard = () => {
   return (
     <div className="min-h-screen bg-slate-900 p-8">
       <div className="max-w-6xl mx-auto">
-        <header className="flex justify-between items-center mb-10">
+        <header className="flex justify-between items-center mb-10 bg-slate-800 p-6 rounded-2xl border border-slate-700">
           <div>
             <h1 className="text-3xl font-bold text-white">Moj Raspored</h1>
-            <p className="text-slate-400">Dobrodošao nazad, Luka!</p>
+            <p className="text-slate-400">Dobrodošao nazad!</p>
           </div>
-          <div className="w-48">
-             <Button variant="secondary" onClick={() => alert("Odjava...")}>Odjavi se</Button>
+          
+          <div className="flex gap-4">
+            <div className="w-32">
+              <Button variant="secondary" onClick={() => navigate('/profile')}>
+                Profil
+              </Button>
+            </div>
+            
+            <div className="w-32">
+              <Button variant="primary" onClick={() => navigate('/')}>
+                Odjavi se
+              </Button>
+            </div>
           </div>
         </header>
 
