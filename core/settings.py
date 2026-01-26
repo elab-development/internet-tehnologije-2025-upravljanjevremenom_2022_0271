@@ -1,7 +1,7 @@
 from pathlib import Path
 import pymysql
 
-# MySQL i MariaDB podesavanja
+
 pymysql.version_info = (2, 2, 1, "final", 0)
 pymysql.install_as_MySQLdb()
 
@@ -13,7 +13,7 @@ DEBUG = True
 
 ALLOWED_HOSTS = []
 
-# Aplikacije
+#Aplikacije
 INSTALLED_APPS = [
     'django.contrib.admin',
     'django.contrib.auth',
@@ -56,7 +56,7 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'core.wsgi.application'
 
-# Baza podataka
+#Baza podataka
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.mysql', 
@@ -84,5 +84,6 @@ STATIC_URL = 'static/'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-# CORS podesavanja
+
 CORS_ALLOW_ALL_ORIGINS = True
+AUTH_USER_MODEL = 'api.User'
