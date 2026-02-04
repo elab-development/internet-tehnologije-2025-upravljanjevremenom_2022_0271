@@ -1,22 +1,34 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import axios from 'axios'; // Dodajemo axios
 import { Input } from '../components/Input';
 import { Button } from '../components/Button';
 
 const LoginPage = () => {
-  const [email, setEmail] = useState('');
+  const [username, setUsername] = useState(''); // Django po defaultu koristi username
   const [password, setPassword] = useState('');
-  const navigate = useNavigate(); // Hook za navigaciju
+  const navigate = useNavigate();
 
-  const handleLogin = (e) => {
+  const handleLogin = async (e) => { // Dodajemo async
     e.preventDefault();
     
-    // Ovde ispunjavamo zahtev za korišćenje JavaScript-a (logika)
-    if (email === "admin@fon.bg.ac.rs" && password === "iteh2025") {
-        console.log("Uspešan login!");
-        navigate('/dashboard'); // Prebacuje nas na drugu stranicu
-    } else {
-        alert("Pogrešni podaci. Probaj admin@fon.bg.ac.rs / iteh2025");
+    try {
+      // Šaljemo zahtev Zlatkovom backendu
+      const response = await axios.post('http://127.0.0.1:8000/api/login/', {
+        username: username,
+        password: password
+      });
+
+      // Ako backend vrati token, login je uspešan
+      if (response.data.access) {
+        localStorage.setItem('token', response.data.access); // Čuvamo token
+        localStorage.setItem('refresh', response.data.refresh);
+        console.log("Uspešan login preko baze!");
+        navigate('/dashboard');
+      }
+    } catch (error) {
+      console.error("Greška:", error.response?.data);
+      alert("Neuspešan login. Proveri kredencijale u bazi.");
     }
   };
 
@@ -33,11 +45,11 @@ const LoginPage = () => {
 
         <form onSubmit={handleLogin} className="space-y-2">
           <Input 
-            label="E-mail adresa"
-            type="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            placeholder="ime@primer.com"
+            label="Korisničko ime" // Django koristi username za login
+            type="text"
+            value={username}
+            onChange={(e) => setUsername(e.target.value)}
+            placeholder="Korisničko ime"
             required
           />
 
@@ -50,9 +62,6 @@ const LoginPage = () => {
               placeholder="••••••••"
               required
             />
-            <a href="#" className="absolute top-0 right-0 text-xs text-blue-400 hover:underline">
-                Zaboravili ste lozinku?
-            </a>
           </div>
 
           <div className="pt-4">
@@ -70,4 +79,4 @@ const LoginPage = () => {
   );
 };
 
-export default LoginPage;   
+export default LoginPage;
