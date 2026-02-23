@@ -1,7 +1,7 @@
 <?php
 
 namespace App\Http\Controllers;
-
+use OpenApi\Annotations as OA;
 use Illuminate\Http\Request;
 use App\Models\Korisnik;
 use Illuminate\Support\Facades\Hash;
@@ -36,6 +36,14 @@ class KorisnikController extends Controller
         ], 201);
     }
 
+    /**
+     * @OA\Post(
+     * path="/api/login",
+     * summary="Logovanje korisnika",
+     * @OA\Response(response="200", description="Uspesan login"),
+     * @OA\Response(response="401", description="Pogresni podaci")
+     * )
+     */
     public function login(Request $request)
     {
     // 1. Provera da li je korisnik uneo podatke
