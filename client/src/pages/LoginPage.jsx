@@ -5,32 +5,36 @@ import { Input } from '../components/Input';
 import { Button } from '../components/Button';
 
 const LoginPage = () => {
-  const [username, setUsername] = useState(''); // Django po defaultu koristi username
+  const [email, setEmail] = useState(''); // Django po defaultu koristi username
   const [password, setPassword] = useState('');
   const navigate = useNavigate();
 
-  const handleLogin = async (e) => { // Dodajemo async
+  const handleLogin = async (e) => {
     e.preventDefault();
-    
     try {
-      // Šaljemo zahtev Zlatkovom backendu
-      const response = await axios.post('http://127.0.0.1:8000/api/login/', {
-        username: username,
-        password: password
-      });
+        const response = await axios.post('http://127.0.0.1:8000/api/login', {
+            email: email,      // Proveri da li se state zove 'email'
+            lozinka: password  // Proveri da li se state zove 'password'
+        });
 
-      // Ako backend vrati token, login je uspešan
-      if (response.data.access) {
-        localStorage.setItem('token', response.data.access); // Čuvamo token
-        localStorage.setItem('refresh', response.data.refresh);
-        console.log("Uspešan login preko baze!");
-        navigate('/dashboard');
-      }
+        if (response.data.access_token) {
+    localStorage.setItem('token', response.data.access_token);
+    
+    // Proveravamo gde se tačno nalazi tip korisnika u odgovoru
+    // Ako Laravel vraća { user: { idTip: 1 } ... }
+    const userTip = response.data.user ? response.data.user.idTip : response.data.idTip;
+    
+    localStorage.setItem('idTip', userTip); 
+    
+    console.log("Ulogovan! Tip:", userTip);
+    navigate('/dashboard');
+}
     } catch (error) {
-      console.error("Greška:", error.response?.data);
-      alert("Neuspešan login. Proveri kredencijale u bazi.");
+        // Ovo će sprečiti "undefined" grešku u konzoli
+        console.error("Greška pri prijavi:", error.response?.data || error.message);
+        alert("Neuspešan login. Proveri podatke ili Laravel server.");
     }
-  };
+};
 
   return (
     <div className="min-h-screen bg-slate-900 flex items-center justify-center p-4">
@@ -45,10 +49,10 @@ const LoginPage = () => {
 
         <form onSubmit={handleLogin} className="space-y-2">
           <Input 
-            label="Korisničko ime" // Django koristi username za login
+            label="Email" 
             type="text"
-            value={username}
-            onChange={(e) => setUsername(e.target.value)}
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
             placeholder="Korisničko ime"
             required
           />
@@ -72,7 +76,13 @@ const LoginPage = () => {
         </form>
 
         <p className="text-center text-slate-400 mt-8 text-sm">
-          Nemate nalog? <a href="#" className="text-emerald-400 font-semibold hover:underline">Registrujte se</a>
+
+          Nemate nalog?
+          <span 
+          onClick={() => navigate('/register')} 
+          className="text-blue-400 cursor-pointer hover:underline ml-1">
+          Registruj se
+          </span>
         </p>
       </div>
     </div>

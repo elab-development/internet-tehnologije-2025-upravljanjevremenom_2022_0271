@@ -11,3 +11,5 @@ export const Input = ({ label, type, value, onChange, placeholder, required }) =
     />
   </div>
 );
+
+export default Input;

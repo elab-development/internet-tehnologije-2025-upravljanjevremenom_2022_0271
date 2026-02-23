@@ -7,10 +7,12 @@ export const Button = ({ children, onClick, type = "button", variant = "primary"
   return (
     <button 
       type={type}
-      onClick={onClick}
+      onClick={onClick} // Ovo je u redu, ali type="submit" unutar forme je ono što nam treba
       className={`${styles[variant]} w-full text-white font-bold py-3 rounded-lg transition-all transform hover:scale-[1.01] active:scale-[0.99] shadow-lg`}
     >
       {children}
     </button>
   );
 };
+
+export default Button;

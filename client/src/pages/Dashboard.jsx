@@ -1,45 +1,79 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
+import Card from '../components/Card'; 
+import Button from '../components/Button';
 
 const Dashboard = () => {
-  const [podaci, setPodaci] = useState([]);
+  const [tasks, setTasks] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [shownAlerts, setShownAlerts] = useState(new Set());
   const navigate = useNavigate();
+  
+  const tipKorisnika = localStorage.getItem('idTip'); 
+
+  const fetchData = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) { navigate('/'); return; }
+
+      const response = await axios.get('http://127.0.0.1:8000/api/moji-zadaci', {
+          headers: { Authorization: `Bearer ${token}` }
+      });
+
+      setTasks(response.data);
+      setLoading(false);
+    } catch (error) {
+      setError("Problem sa povezivanjem na bazu.");
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const token = localStorage.getItem('token');
-        if (!token) {
-          navigate('/');
-          return;
-        }
-
-        // Koristimo /api/zadaci/ jer si potvrdio da ta putanja radi
-        const response = await axios.get('http://127.0.0.1:8000/api/zadaci/', {
-          headers: {
-            Authorization: `Bearer ${token}`
-          }
-        });
-
-        const data = Array.isArray(response.data) ? response.data : [];
-        setPodaci(data);
-        setLoading(false);
-      } catch (err) {
-        console.error("Greška pri povlačenju podataka:", err);
-        setError("Problem sa povezivanjem na bazu.");
-        setLoading(false);
-        if (err.response?.status === 401) {
-          localStorage.removeItem('token');
-          navigate('/');
-        }
-      }
-    };
-
     fetchData();
   }, [navigate]);
+
+  // FUNKCIJA ZA BRISANJE
+  const handleDelete = async (id) => {
+    if (!window.confirm("Da li ste sigurni da želite da obrišete ovaj zadatak?")) return;
+
+    try {
+      const token = localStorage.getItem('token');
+      await axios.delete(`http://127.0.0.1:8000/api/obrisi-zadatak/${id}`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+
+      // Filtriramo tasks tako da izbacimo obrisani bez novog poziva ka bazi
+      setTasks(tasks.filter(t => t.idZadatak !== id));
+    } catch (error) {
+      alert("Greška: Nije moguće obrisati zadatak.");
+    }
+  };
+
+  // LOGIKA ZA PODSETNIK (5 minuta ranije)
+  useEffect(() => {
+    const interval = setInterval(() => {
+        const sada = new Date();
+        
+        tasks.forEach(zadatak => {
+            const vremeZadatka = new Date(zadatak.vremeObavljanja);
+            const razlika = (vremeZadatka - sada) / 60000; 
+
+            if (razlika > 4.5 && razlika <= 5.5 && !shownAlerts.has(zadatak.idZadatak)) {
+                alert(`🔔 PODSETNIK: ${zadatak.nazivZadatka} počinje za 5 minuta!`);
+                setShownAlerts(prev => new Set(prev).add(zadatak.idZadatak));
+            }
+        });
+    }, 30000);
+
+    return () => clearInterval(interval);
+  }, [tasks, shownAlerts]);
+
+  const handleLogout = () => {
+    localStorage.clear();
+    navigate('/');
+  };
 
   return (
     <div className="min-h-screen bg-slate-900 text-slate-100 p-8">
@@ -47,43 +81,66 @@ const Dashboard = () => {
         <div className="flex justify-between items-center mb-10">
           <div>
             <h1 className="text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-emerald-400">
-              Moji Zadaci
+              Upravljanje Vremenom
             </h1>
-            <p className="text-slate-400">Podaci iz MySQL baze (api_zadatak)</p>
+            <p className="text-slate-400 mt-1">
+              Status naloga: <span className="text-emerald-400 font-bold">{tipKorisnika === '1' ? '🎓 Student' : '👤 Korisnik'}</span>
+            </p>
           </div>
-          <div className="flex gap-4">
-            <button onClick={() => navigate('/profile')} className="px-4 py-2 bg-slate-800 border border-slate-700 rounded-lg hover:bg-slate-700">
-              Profil
-            </button>
-            <button onClick={() => { localStorage.removeItem('token'); navigate('/'); }} className="px-4 py-2 bg-red-500/10 text-red-400 border border-red-500/20 rounded-lg hover:bg-red-500/20">
+          
+          <div className="flex items-center gap-4">
+            {tipKorisnika === '1' && (
+              <button 
+                onClick={() => navigate('/add-task')} 
+                className="bg-emerald-500/20 text-emerald-400 px-4 py-2 rounded-lg border border-emerald-500/30 text-sm font-bold hover:bg-emerald-500/30 transition-all"
+              >
+                + Dodaj zadatak
+              </button>
+            )}
+
+            <div className="w-32">
+                <Button variant="secondary" onClick={() => navigate('/profile')}>
+                  Profil
+                </Button>
+            </div>
+            
+            <button 
+                onClick={handleLogout} 
+                className="px-4 py-2 bg-red-500/10 text-red-400 border border-red-500/20 rounded-lg hover:bg-red-500/20 transition-colors text-sm font-bold"
+            >
               Odjavi se
             </button>
           </div>
         </div>
 
+        <hr className="border-slate-800 mb-10" />
+
         {loading ? (
-          <div className="text-center py-20 text-slate-500">Učitavanje podataka...</div>
+          <div className="flex flex-col items-center justify-center py-20 text-slate-500">
+             <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-blue-500 mb-4"></div>
+             <p>Učitavanje tvojih zadataka...</p>
+          </div>
         ) : error ? (
-          <div className="text-center text-red-400 py-20">{error}</div>
+          <div className="text-center text-red-400 py-20 bg-red-500/5 rounded-2xl border border-red-500/20">
+            {error}
+          </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {podaci.length > 0 ? (
-              podaci.map((stavka) => (
-                <div key={stavka.id} className="bg-slate-800 border border-slate-700 p-6 rounded-2xl hover:border-emerald-500/50 transition-all shadow-lg">
-                  <div className="flex justify-between items-start mb-4">
-                    <span className="px-2 py-1 text-xs font-semibold bg-emerald-500/10 text-emerald-400 rounded">Zadatak</span>
-                    <span className="text-xs text-slate-500">#{stavka.id}</span>
-                  </div>
-                  {/* Prikazuje 'naziv' ili 'naslov' u zavisnosti šta Zlatko ima u bazi */}
-                  <h3 className="text-xl font-bold mb-2">{stavka.naziv || stavka.naslov || "Bez naslova"}</h3>
-                  <p className="text-slate-400 text-sm mb-4">
-                    {stavka.opis || "Nema dodatnog opisa."}
-                  </p>
-                </div>
+            {tasks.length > 0 ? (
+              tasks.map((stavka) => (
+                <Card 
+                  key={stavka.idZadatak}
+                  id={stavka.idZadatak}
+                  naslov={stavka.nazivZadatka}
+                  opis={stavka.opis}
+                  prioritet={stavka.prioritet}
+                  onDelete={handleDelete} // Prosleđivanje funkcije u Card
+                />
               ))
             ) : (
               <div className="col-span-full text-center py-20 bg-slate-800/50 rounded-2xl border border-dashed border-slate-700 text-slate-500">
-                Baza je trenutno prazna.
+                <p className="text-xl mb-2">📭</p>
+                Trenutno nemate unetih zadataka u bazi.
               </div>
             )}
           </div>
