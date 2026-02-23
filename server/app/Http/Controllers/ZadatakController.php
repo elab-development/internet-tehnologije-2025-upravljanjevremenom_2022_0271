@@ -8,6 +8,20 @@ use App\Models\Korisnik; // OBAVEZNO DODAJ OVO
 
 class ZadatakController extends Controller
 {
+
+public function index()
+{
+    // 1. Uzimamo ulogovanog korisnika preko Sanctum tokena
+    $korisnik = auth()->user(); 
+
+    // 2. Uzimamo sve zadatke koji pripadaju baš tom korisniku
+    // Pazi da li se kolona u bazi zove idKorisnik ili id_korisnik!
+    $zadaci = Zadatak::where('idKorisnik', $korisnik->idKorisnik)->get();
+
+    // 3. Vraćamo ih React-u kao JSON
+    return response()->json($zadaci, 200);
+}
+
     public function store(Request $request) 
     {
         $korisnik = auth()->user(); // Uzimamo trenutno ulogovanog preko tokena
