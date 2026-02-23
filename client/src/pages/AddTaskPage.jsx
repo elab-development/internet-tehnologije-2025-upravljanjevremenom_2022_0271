@@ -91,6 +91,13 @@ const AddTaskPage = () => {
                 </select>
 
                 <Button varijanta="primarno" type="submit">Sačuvaj i Kreiraj Podsetnik</Button>
+                <button
+                type="button"
+                onClick={() => navigate('/dashboard')}
+                className="px-6 bg-slate-700 hover:bg-slate-600 text-slate-200 font-bold py-3 rounded-lg transition-colors"
+            >
+                Otkaži
+            </button>
             </form>
         </div>
     );

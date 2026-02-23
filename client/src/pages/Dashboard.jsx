@@ -84,12 +84,21 @@ const Dashboard = () => {
               Upravljanje Vremenom
             </h1>
             <p className="text-slate-400 mt-1">
-              Status naloga: <span className="text-emerald-400 font-bold">{tipKorisnika === '1' ? '🎓 Student' : '👤 Korisnik'}</span>
+              Status naloga: 
+              <span className="font-bold ml-1">
+                {tipKorisnika === '1' ? (
+                  <span className="text-emerald-400">🎓 Student</span>
+                ) : tipKorisnika === '3' ? (
+                  <span className="text-amber-400">💎 Premium</span>
+                ) : (
+                  <span className="text-blue-400">👤 Korisnik</span>
+                )}
+              </span>
             </p>
           </div>
           
           <div className="flex items-center gap-4">
-            {tipKorisnika === '1' && (
+            { (
               <button 
                 onClick={() => navigate('/add-task')} 
                 className="bg-emerald-500/20 text-emerald-400 px-4 py-2 rounded-lg border border-emerald-500/30 text-sm font-bold hover:bg-emerald-500/30 transition-all"

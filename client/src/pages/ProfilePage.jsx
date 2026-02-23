@@ -50,7 +50,9 @@ const ProfilePage = () => {
             {user?.username}
           </h2>
           <p className="text-emerald-400 font-medium text-sm mb-8 tracking-wide uppercase">
-            {localStorage.getItem('idTip') === '1' ? 'Student' : 'Običan Korisnik'}
+          {localStorage.getItem('idTip') === '1' ? 'Student' : 
+          localStorage.getItem('idTip') === '3' ? 'Premium' : 
+          localStorage.getItem('idTip') === '2' ? 'Običan korisnik' : 'Gost'}
           </p>
           
           <div className="w-full space-y-4">
