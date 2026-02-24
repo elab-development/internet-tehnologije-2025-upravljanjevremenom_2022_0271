@@ -44,14 +44,13 @@ const Dashboard = () => {
         headers: { Authorization: `Bearer ${token}` }
       });
 
-      // Filtriramo tasks tako da izbacimo obrisani bez novog poziva ka bazi
       setTasks(tasks.filter(t => t.idZadatak !== id));
     } catch (error) {
       alert("Greška: Nije moguće obrisati zadatak.");
     }
   };
 
-  // LOGIKA ZA PODSETNIK (5 minuta ranije)
+  // LOGIKA ZA PODSETNIK I OSVEŽAVANJE STATUSA
   useEffect(() => {
     const interval = setInterval(() => {
         const sada = new Date();
@@ -65,6 +64,9 @@ const Dashboard = () => {
                 setShownAlerts(prev => new Set(prev).add(zadatak.idZadatak));
             }
         });
+
+        // Triggerujemo re-render da bi se ažurirali "Istekao" statusi na karticama
+        setTasks([...tasks]); 
     }, 30000);
 
     return () => clearInterval(interval);
@@ -98,7 +100,8 @@ const Dashboard = () => {
           </div>
           
           <div className="flex items-center gap-4">
-            { (
+            {/* Dugme vidljivo samo za Studente (1) i Premium (3) */}
+            {(tipKorisnika === '1' || tipKorisnika === '2' || tipKorisnika === '3') && (
               <button 
                 onClick={() => navigate('/add-task')} 
                 className="bg-emerald-500/20 text-emerald-400 px-4 py-2 rounded-lg border border-emerald-500/30 text-sm font-bold hover:bg-emerald-500/30 transition-all"
@@ -136,16 +139,23 @@ const Dashboard = () => {
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {tasks.length > 0 ? (
-              tasks.map((stavka) => (
-                <Card 
-                  key={stavka.idZadatak}
-                  id={stavka.idZadatak}
-                  naslov={stavka.nazivZadatka}
-                  opis={stavka.opis}
-                  prioritet={stavka.prioritet}
-                  onDelete={handleDelete} // Prosleđivanje funkcije u Card
-                />
-              ))
+              tasks.map((stavka) => {
+                // Provera da li je zadatak istekao
+                const jeIstekao = new Date(stavka.vremeObavljanja) < new Date();
+
+                return (
+                  <Card 
+                    key={stavka.idZadatak}
+                    id={stavka.idZadatak}
+                    naslov={stavka.nazivZadatka}
+                    opis={stavka.opis}
+                    prioritet={stavka.prioritet}
+                    vreme={stavka.vremeObavljanja}
+                    onDelete={handleDelete}
+                    istekao={jeIstekao} // Prosleđujemo status u Card
+                  />
+                );
+              })
             ) : (
               <div className="col-span-full text-center py-20 bg-slate-800/50 rounded-2xl border border-dashed border-slate-700 text-slate-500">
                 <p className="text-xl mb-2">📭</p>

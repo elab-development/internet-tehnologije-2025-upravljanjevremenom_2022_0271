@@ -3,60 +3,95 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
-use App\Models\Zadatak; // OBAVEZNO DODAJ OVO
-use App\Models\Korisnik; // OBAVEZNO DODAJ OVO
+use App\Models\Zadatak;
+use App\Models\Korisnik;
+use App\Models\TipZadatka;
+use App\Models\Podsetnik;
+use Carbon\Carbon;
 
 class ZadatakController extends Controller
 {
+    // Vraća sve tipove zadataka za Combobox na frontendu
+    public function getTipovi() 
+    {
+        return response()->json(TipZadatka::all(), 200);
+    }
 
-public function index()
-{
-    // 1. Uzimamo ulogovanog korisnika preko Sanctum tokena
-    $korisnik = auth()->user(); 
-
-    // 2. Uzimamo sve zadatke koji pripadaju baš tom korisniku
-    // Pazi da li se kolona u bazi zove idKorisnik ili id_korisnik!
-    $zadaci = Zadatak::where('idKorisnik', $korisnik->idKorisnik)->get();
-
-    // 3. Vraćamo ih React-u kao JSON
-    return response()->json($zadaci, 200);
-}
+    // Vraća zadatke ulogovanog korisnika
+    public function index()
+    {
+        $korisnik = auth()->user(); 
+        $zadaci = Zadatak::where('idKorisnik', $korisnik->idKorisnik)->get();
+        return response()->json($zadaci, 200);
+    }
 
     public function store(Request $request) 
     {
-        $korisnik = auth()->user(); // Uzimamo trenutno ulogovanog preko tokena
 
-        // Validacija onoga što stiže sa frontenda
+        $vremeObavljanja = Carbon::parse($request->vremeObavljanja);
+
+        if ($vremeObavljanja->isPast()) {
+            return response()->json(['poruka' => 'Vreme obavljanja mora biti u budućnosti.'], 422);
+        }
+        $korisnik = auth()->user();
+
+        // 1. Proširena validacija za sva polja sa forme
         $request->validate([
             'nazivZadatka' => 'required|string|max:255',
+            'opis' => 'nullable|string',
+            'vremeObavljanja' => 'required|date', // Format: YYYY-MM-DD HH:mm:ss
             'idTipZadatka' => 'required|integer',
-            // dodaj ostala polja po potrebi
+            'prioritet' => 'required|string',
         ]);
         
-        // Brojimo koliko korisnik već ima zadataka u bazi
+        // 2. Provera limita (Studenti max 10)
         $brojZadataka = Zadatak::where('idKorisnik', $korisnik->idKorisnik)->count();
+        $limit = 20; 
+        if ($korisnik->idTip == 1) $limit = 10; 
+        if ($korisnik->idTip == 3) $limit = 30; 
 
-        // Definišemo limite na osnovu idTip
-        $limit = 20; // Default za obične
-        if ($korisnik->idTip == 1) $limit = 10; // Student
-        if ($korisnik->idTip == 3) $limit = 30; // Premium
-
-        // PROVERA LIMITA
         if ($brojZadataka >= $limit) {
             return response()->json([
-                'poruka' => "Dostigli ste limit od $limit zadataka za vas tip naloga!"
-            ], 403); // 403 Forbidden - savršeno za REST konvenciju
+                'poruka' => "Dostigli ste limit od $limit zadataka za vaš tip naloga!"
+            ], 403);
         }
 
-        // Kreiranje zadatka tako da idKorisnik uvek bude od ulogovanog korisnika
+        // 3. Kreiranje zadatka
         $podaci = $request->all();
         $podaci['idKorisnik'] = $korisnik->idKorisnik;
-
         $zadatak = Zadatak::create($podaci);
 
+        // 4. LOGIKA ZA PODSETNIK (5 minuta ranije)
+        // Uzimamo vreme obavljanja i oduzimamo 5 minuta
+        $vremeObavljanja = Carbon::parse($request->vremeObavljanja);
+        $vremeSlanja = $vremeObavljanja->copy()->subMinutes(5);
+
+        Podsetnik::create([
+    'vremeSlanja' => $vremeObavljanja->copy()->subMinutes(5),
+    'poruka' => "Podsetnik za " . $zadatak->nazivZadatka,
+    'idZadatak' => $zadatak->idZadatak // Proveri da li se kolona ovako zove u bazi!
+]);
+
         return response()->json([
-            'poruka' => 'Zadatak uspesno kreiran',
+            'poruka' => 'Zadatak i podsetnik su uspešno kreirani!',
             'podaci' => $zadatak
         ], 201);
     }
+
+    public function destroy($id)
+{
+    $korisnik = auth()->user();
+    // Proveravamo da li zadatak pripada baš tom korisniku pre brisanja
+    $zadatak = Zadatak::where('idZadatak', $id)
+                      ->where('idKorisnik', $korisnik->idKorisnik)
+                      ->first();
+
+    if (!$zadatak) {
+        return response()->json(['poruka' => 'Zadatak nije pronađen ili nemate dozvolu'], 404);
+    }
+
+    $zadatak->delete();
+
+    return response()->json(['poruka' => 'Zadatak uspešno obrisan'], 200);
+}
 }

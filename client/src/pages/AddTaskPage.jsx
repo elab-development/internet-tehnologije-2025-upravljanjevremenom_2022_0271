@@ -12,7 +12,7 @@ const AddTaskPage = () => {
         datum: '',
         vreme: '',
         idTipZadatka: '',
-        prioritet: 'Srednji'
+        prioritet: 'Nizak'
     });
 
     useEffect(() => {
@@ -34,6 +34,16 @@ const AddTaskPage = () => {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
+
+        // Spajamo datum i vreme u jedan objekat
+        const izabraniDatum = new Date(`${formData.datum}T${formData.vreme}`);
+        const sada = new Date();
+
+        if (izabraniDatum < sada) {
+            alert("❌ Ne možete zakazati zadatak u prošlosti! Izaberite buduće vreme.");
+            return; // Zaustavlja slanje zahteva
+        }
+
         try {
             const token = localStorage.getItem('token');
             // Spajamo datum i vreme u format koji Laravel razume (Y-m-d H:i)

@@ -1,6 +1,7 @@
 <?php
 
 namespace App\Http\Controllers;
+
 use OpenApi\Annotations as OA;
 use Illuminate\Http\Request;
 use App\Models\Korisnik;
@@ -17,21 +18,31 @@ class KorisnikController extends Controller
             'lozinka' => 'required|min:6'
         ]);
 
-        // 2. TVOJA LOGIKA: Provera domena emaila
-        // Ako sadrzi fon.bg.ac.rs, idTip je 1 (student), inače je 2 (obican)
-        $idTip = str_contains($request->email, 'fon.bg.ac.rs') ? 1 : 2;
+        // 2. NOVA LOGIKA: Provera domena emaila za tipove korisnika
+        $email = $request->email;
+        
+        if (str_contains($email, '@student')) {
+            $idTip = 1; // Student
+            $tipNaziv = 'student';
+        } elseif (str_contains($email, '@premium')) {
+            $idTip = 3; // Premium korisnik
+            $tipNaziv = 'premium korisnik';
+        } else {
+            $idTip = 2; // Običan korisnik
+            $tipNaziv = 'obican korisnik';
+        }
 
         // 3. Kreiranje korisnika u bazi
         $korisnik = Korisnik::create([
             'username' => $request->username,
             'email' => $request->email,
-            'lozinka' => Hash::make($request->lozinka), // Kriptujemo lozinku zbog sigurnosti
+            'lozinka' => Hash::make($request->lozinka),
             'idTip' => $idTip
         ]);
 
         return response()->json([
             'poruka' => 'Uspesna registracija!',
-            'tip' => $idTip == 1 ? 'student' : 'obican korisnik',
+            'tip' => $tipNaziv,
             'podaci' => $korisnik
         ], 201);
     }
@@ -46,39 +57,33 @@ class KorisnikController extends Controller
      */
     public function login(Request $request)
     {
-    // 1. Provera da li je korisnik uneo podatke
-    $request->validate([
-        'email' => 'required|email',
-        'lozinka' => 'required'
-    ]);
+        $request->validate([
+            'email' => 'required|email',
+            'lozinka' => 'required'
+        ]);
 
-    // 2. Pronalazak korisnika u bazi
-    $korisnik = Korisnik::where('email', $request->email)->first();
+        $korisnik = Korisnik::where('email', $request->email)->first();
 
-    // 3. Provera lozinke
-    if (!$korisnik || !Hash::check($request->lozinka, $korisnik->lozinka)) {
-        return response()->json(['poruka' => 'Pogresni podaci'], 401);
-    }
+        if (!$korisnik || !Hash::check($request->lozinka, $korisnik->lozinka)) {
+            return response()->json(['poruka' => 'Pogresni podaci'], 401);
+        }
 
-    // 4. Generisanje digitalnog kljuca (Tokena)
-    $token = $korisnik->createToken('auth_token')->plainTextToken;
+        $token = $korisnik->createToken('auth_token')->plainTextToken;
 
-    return response()->json([
-        'poruka' => 'Uspesan login!',
-        'access_token' => $token,
-        'token_type' => 'Bearer',
-        'idTip' => $korisnik->idTip // Saljemo Reactu informaciju o tipu (1 ili 2)
-    ]);
+        return response()->json([
+            'poruka' => 'Uspesan login!',
+            'access_token' => $token,
+            'token_type' => 'Bearer',
+            'idTip' => $korisnik->idTip 
+        ]);
     }
 
     public function logout(Request $request)
     {
-    // Brišemo trenutni token kojim je korisnik pristupio
-    $request->user()->currentAccessToken()->delete();
+        $request->user()->currentAccessToken()->delete();
 
-    return response()->json([
-        'poruka' => 'Uspesno ste se izlogovali!'
-    ]);
+        return response()->json([
+            'poruka' => 'Uspesno ste se izlogovali!'
+        ]);
     }
-
 }
