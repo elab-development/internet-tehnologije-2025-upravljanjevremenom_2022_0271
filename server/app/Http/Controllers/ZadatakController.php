@@ -78,6 +78,19 @@ class ZadatakController extends Controller
         ], 201);
     }
 
+    public function update(Request $request, $id)
+{
+    $zadatak = Zadatak::findOrFail($id); // Nađi zadatak ili baci grešku 404
+    
+    // Provera vlasništva (isto kao kod brisanja)
+    if ($zadatak->idKorisnik != auth()->id()) {
+        return response()->json(['poruka' => 'Niste vlasnik'], 403);
+    }
+
+    $zadatak->update($request->all()); // Pregazi stare podatke novim
+    return response()->json($zadatak);
+}
+
     public function destroy($id)
 {
     $korisnik = auth()->user();

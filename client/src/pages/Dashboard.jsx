@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
-import Card from '../components/Card'; 
+import Card from '../components/Card';
 import Button from '../components/Button';
 
 const Dashboard = () => {
@@ -10,8 +10,8 @@ const Dashboard = () => {
   const [error, setError] = useState(null);
   const [shownAlerts, setShownAlerts] = useState(new Set());
   const navigate = useNavigate();
-  
-  const tipKorisnika = localStorage.getItem('idTip'); 
+
+  const tipKorisnika = localStorage.getItem('idTip');
 
   const fetchData = async () => {
     try {
@@ -19,7 +19,7 @@ const Dashboard = () => {
       if (!token) { navigate('/'); return; }
 
       const response = await axios.get('http://127.0.0.1:8000/api/moji-zadaci', {
-          headers: { Authorization: `Bearer ${token}` }
+        headers: { Authorization: `Bearer ${token}` }
       });
 
       setTasks(response.data);
@@ -53,20 +53,20 @@ const Dashboard = () => {
   // LOGIKA ZA PODSETNIK I OSVEŽAVANJE STATUSA
   useEffect(() => {
     const interval = setInterval(() => {
-        const sada = new Date();
-        
-        tasks.forEach(zadatak => {
-            const vremeZadatka = new Date(zadatak.vremeObavljanja);
-            const razlika = (vremeZadatka - sada) / 60000; 
+      const sada = new Date();
 
-            if (razlika > 4.5 && razlika <= 5.5 && !shownAlerts.has(zadatak.idZadatak)) {
-                alert(`🔔 PODSETNIK: ${zadatak.nazivZadatka} počinje za 5 minuta!`);
-                setShownAlerts(prev => new Set(prev).add(zadatak.idZadatak));
-            }
-        });
+      tasks.forEach(zadatak => {
+        const vremeZadatka = new Date(zadatak.vremeObavljanja);
+        const razlika = (vremeZadatka - sada) / 60000;
 
-        // Triggerujemo re-render da bi se ažurirali "Istekao" statusi na karticama
-        setTasks([...tasks]); 
+        if (razlika > 4.5 && razlika <= 5.5 && !shownAlerts.has(zadatak.idZadatak)) {
+          alert(`🔔 PODSETNIK: ${zadatak.nazivZadatka} počinje za 5 minuta!`);
+          setShownAlerts(prev => new Set(prev).add(zadatak.idZadatak));
+        }
+      });
+
+      // Triggerujemo re-render da bi se ažurirali "Istekao" statusi na karticama
+      setTasks([...tasks]);
     }, 30000);
 
     return () => clearInterval(interval);
@@ -86,7 +86,7 @@ const Dashboard = () => {
               Upravljanje Vremenom
             </h1>
             <p className="text-slate-400 mt-1">
-              Status naloga: 
+              Status naloga:
               <span className="font-bold ml-1">
                 {tipKorisnika === '1' ? (
                   <span className="text-emerald-400">🎓 Student</span>
@@ -98,12 +98,12 @@ const Dashboard = () => {
               </span>
             </p>
           </div>
-          
+
           <div className="flex items-center gap-4">
             {/* Dugme vidljivo samo za Studente (1) i Premium (3) */}
             {(tipKorisnika === '1' || tipKorisnika === '2' || tipKorisnika === '3') && (
-              <button 
-                onClick={() => navigate('/add-task')} 
+              <button
+                onClick={() => navigate('/add-task')}
                 className="bg-emerald-500/20 text-emerald-400 px-4 py-2 rounded-lg border border-emerald-500/30 text-sm font-bold hover:bg-emerald-500/30 transition-all"
               >
                 + Dodaj zadatak
@@ -111,14 +111,14 @@ const Dashboard = () => {
             )}
 
             <div className="w-32">
-                <Button variant="secondary" onClick={() => navigate('/profile')}>
-                  Profil
-                </Button>
+              <Button variant="secondary" onClick={() => navigate('/profile')}>
+                Profil
+              </Button>
             </div>
-            
-            <button 
-                onClick={handleLogout} 
-                className="px-4 py-2 bg-red-500/10 text-red-400 border border-red-500/20 rounded-lg hover:bg-red-500/20 transition-colors text-sm font-bold"
+
+            <button
+              onClick={handleLogout}
+              className="px-4 py-2 bg-red-500/10 text-red-400 border border-red-500/20 rounded-lg hover:bg-red-500/20 transition-colors text-sm font-bold"
             >
               Odjavi se
             </button>
@@ -129,8 +129,8 @@ const Dashboard = () => {
 
         {loading ? (
           <div className="flex flex-col items-center justify-center py-20 text-slate-500">
-             <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-blue-500 mb-4"></div>
-             <p>Učitavanje tvojih zadataka...</p>
+            <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-blue-500 mb-4"></div>
+            <p>Učitavanje tvojih zadataka...</p>
           </div>
         ) : error ? (
           <div className="text-center text-red-400 py-20 bg-red-500/5 rounded-2xl border border-red-500/20">
@@ -144,16 +144,25 @@ const Dashboard = () => {
                 const jeIstekao = new Date(stavka.vremeObavljanja) < new Date();
 
                 return (
-                  <Card 
-                    key={stavka.idZadatak}
-                    id={stavka.idZadatak}
-                    naslov={stavka.nazivZadatka}
-                    opis={stavka.opis}
-                    prioritet={stavka.prioritet}
-                    vreme={stavka.vremeObavljanja}
-                    onDelete={handleDelete}
-                    istekao={jeIstekao} // Prosleđujemo status u Card
-                  />
+                  <div key={stavka.idZadatak} className="relative group">
+                    <Card
+                      id={stavka.idZadatak}
+                      naslov={stavka.nazivZadatka}
+                      opis={stavka.opis}
+                      prioritet={stavka.prioritet}
+                      vreme={stavka.vremeObavljanja}
+                      onDelete={handleDelete}
+                      istekao={jeIstekao}
+                    />
+
+                    {/* DODATO: Dugme za izmenu koje se pojavljuje iznad kartice */}
+                    <button
+                      onClick={() => navigate(`/edit-task/${stavka.idZadatak}`)}
+                      className="absolute bottom-4 right-4 bg-blue-500/20 text-blue-400 p-2 rounded-md border border-blue-500/30 hover:bg-blue-500/40 transition-all text-xs font-bold z-10"
+                    >
+                      ✏️ Izmeni
+                    </button>
+                  </div>
                 );
               })
             ) : (

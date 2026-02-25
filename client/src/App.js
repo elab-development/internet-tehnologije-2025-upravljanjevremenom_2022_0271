@@ -15,6 +15,7 @@ function App() {
         <Route path="/dashboard" element={<Dashboard />} />
         <Route path="/register" element={<RegisterPage />} /> 
         <Route path="/profile" element={<ProfilePage />} />
+        <Route path="/edit-task/:id" element={<AddTaskPage />} />
       </Routes>
     </Router>
   );

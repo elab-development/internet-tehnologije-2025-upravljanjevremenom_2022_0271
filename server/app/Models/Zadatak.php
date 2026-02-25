@@ -6,7 +6,7 @@ use Illuminate\Database\Eloquent\Model;
 
 class Zadatak extends Model
 {
-    // Naziv tabele u bazi (proveri da li je 'zadaci' ili 'zadataks')
+    // Naziv tabele u bazi 
     protected $table = 'zadataks';
     protected $primaryKey = 'idZadatak';
 
